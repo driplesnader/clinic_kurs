@@ -9,23 +9,31 @@
             <div class="brand-sub">Ветеринарная клиника</div>
           </div>
         </router-link>
-<nav class="main-nav">
-  <router-link to="/">Главная</router-link>
-  <router-link to="/vets">Врачи</router-link>
-  
-  <!-- Выпадающее меню для услуг -->
-  <div class="dropdown">
-    <span class="dropdown-toggle">Услуги ▼</span>
-    <div class="dropdown-menu">
-      <router-link to="/appointment">Терапия</router-link>
-      <router-link to="/appointment">Хирургия</router-link>
-      <router-link to="/appointment">Стерилизация</router-link>
-      <router-link to="/appointment">Кастрация</router-link>
-    </div>
-  </div>
+        
+        <nav class="main-nav">
+          <router-link to="/">Главная</router-link>
+          <router-link to="/vets">Врачи</router-link>
+          
+          <div class="dropdown">
+            <span class="dropdown-toggle">Услуги ▼</span>
+            <div class="dropdown-menu">
+              <!-- Выводим все услуги из базы данных -->
+              <router-link 
+                v-for="service in servicesMenu" 
+                :key="service.id" 
+                to="/appointment"
+              >
+                {{ service.title }}
+              </router-link>
+            </div>
+          </div>
 
-  <router-link to="/appointment">Записаться</router-link>
-</nav>
+          <router-link to="/appointment">Записаться</router-link>
+          <router-link to="/profile">Личный кабинет</router-link>
+          <router-link to="/login" class="login-btn">Вход</router-link>
+        </nav>
+      </div>
+    </header>
 
     <main class="container" style="margin-top: 40px; min-height: 60vh;">
       <router-view />
@@ -38,6 +46,23 @@
     </footer>
   </div>
 </template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import apiClient from './api/index';
+
+const servicesMenu = ref([]);
+
+onMounted(async () => {
+  try {
+    const response = await apiClient.get('/services/');
+    // Убрали slice, теперь загружаются ВСЕ услуги
+    servicesMenu.value = response.data; 
+  } catch (error) {
+    console.error("Ошибка загрузки меню услуг", error);
+  }
+});
+</script>
 
 <style>
 body {
@@ -93,6 +118,11 @@ body {
   color: #6b7280;
 }
 
+.main-nav {
+  display: flex;
+  align-items: center;
+}
+
 .main-nav a {
   margin-left: 10px;
   text-decoration: none;
@@ -114,14 +144,6 @@ body {
   box-shadow: 0 4px 15px rgba(255, 92, 138, 0.3);
 }
 
-.site-footer {
-  margin-top: 50px;
-  padding: 30px 0;
-  text-align: center;
-  border-top: 1px solid rgba(0, 0, 0, 0.04);
-  color: #6b7280;
-}
-/* Стили для выпадающего меню в шапке */
 .dropdown {
   position: relative;
   display: inline-block;
@@ -149,7 +171,7 @@ body {
   top: 100%;
   left: 0;
   background: white;
-  min-width: 180px;
+  min-width: 280px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.1);
   border-radius: 16px;
   padding: 10px 0;
@@ -162,15 +184,33 @@ body {
 }
 
 .dropdown-menu a {
-  padding: 10px 20px;
+  padding: 12px 20px;
   color: #444;
   text-decoration: none;
-  font-size: 15px;
+  font-size: 14px;
   transition: background 0.2s;
+  margin-left: 0;
+  border-radius: 0;
+  white-space: normal;
+  line-height: 1.4;
 }
 
 .dropdown-menu a:hover {
   background: #fff0f5;
   color: #ff5c8a;
+}
+
+.login-btn {
+  background: #ff5c8a !important;
+  color: white !important;
+  box-shadow: 0 4px 10px rgba(255, 92, 138, 0.3);
+}
+
+.site-footer {
+  margin-top: 50px;
+  padding: 30px 0;
+  text-align: center;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+  color: #6b7280;
 }
 </style>
