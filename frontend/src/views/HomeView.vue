@@ -1,6 +1,6 @@
 <template>
   <div class="home-page">
-    <!-- HERO SECTION (остается без изменений) -->
+    <!-- HERO SECTION -->
     <section class="hero-section">
       <div class="hero-background">
         <div class="glow-circle circle-1"></div>
@@ -56,15 +56,15 @@
                 <small>Всегда на связи</small>
               </div>
             </div>
-            <div class="image-placeholder">
-              <span class="placeholder-emoji">🐶</span>
-            </div>
+            
+            <img src="/hero1.png" alt="Питомец" class="hero-image" />
+            
           </div>
         </div>
       </div>
     </section>
 
-    <!-- СЕКЦИЯ УСЛУГ (ТЕПЕРЬ ИЗ БАЗЫ ДАННЫХ) -->
+    <!-- СЕКЦИЯ УСЛУГ -->
     <section class="services-section">
       <div class="section-header">
         <h2 class="section-title">Наши услуги</h2>
@@ -76,21 +76,49 @@
       <div v-else class="services-grid">
         <div v-for="service in services" :key="service.id" class="service-card">
           <div class="service-img-placeholder bg-1">
-            <span>💉</span> <!-- Иконку можно менять динамически, но пока оставим -->
+            <span>💉</span>
           </div>
           <div class="service-content">
             <h3>{{ service.title }}</h3>
             <p>{{ service.description }}</p>
             <div class="service-footer">
               <span class="service-price">{{ service.price }} ₽</span>
-              <router-link to="/appointment" class="service-link">Записаться →</router-link>
+              <router-link :to="`/service/${service.id}`" class="service-link">Подробнее →</router-link>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- СЕКЦИЯ ПРЕИМУЩЕСТВ (остается без изменений) -->
+    <!-- НОВАЯ СЕКЦИЯ: НАШИ ВРАЧИ -->
+    <section class="vets-preview-section">
+      <div class="section-header">
+        <h2 class="section-title">Наши специалисты</h2>
+        <p class="section-subtitle">Врачи, которым доверяют ваши питомцы</p>
+      </div>
+
+      <div v-if="loadingVets" class="loading-text">Загрузка врачей...</div>
+
+      <div v-else class="vets-preview-grid">
+        <!-- Выводим только первых 3 врачей -->
+        <div v-for="(vet, index) in vets.slice(0, 3)" :key="vet.id" class="vet-preview-card">
+          <div class="vet-preview-image">
+            <img :src="`/doctor${(index % 3) + 1}.jpg`" alt="Врач" @error="hideImage" />
+          </div>
+          <div class="vet-preview-info">
+            <h3>{{ vet.first_name }} {{ vet.last_name }}</h3>
+            <p class="vet-preview-speciality">{{ vet.speciality }}</p>
+            <router-link to="/vets" class="vet-preview-link">Подробнее →</router-link>
+          </div>
+        </div>
+      </div>
+
+      <div class="vets-action">
+        <router-link to="/vets" class="btn btn-outline-dark">Смотреть всех врачей</router-link>
+      </div>
+    </section>
+
+    <!-- СЕКЦИЯ ПРЕИМУЩЕСТВ -->
     <section class="features-section">
       <div class="features-grid">
         <div class="feature-card">
@@ -115,12 +143,16 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import apiClient from '../api/index'; // Импортируем axios
+import apiClient from '../api/index';
 
+// Услуги
 const services = ref([]);
 const loadingServices = ref(true);
 
-// Загружаем услуги с бэкенда
+// Врачи
+const vets = ref([]);
+const loadingVets = ref(true);
+
 const fetchServices = async () => {
   try {
     const response = await apiClient.get('/services/');
@@ -132,8 +164,24 @@ const fetchServices = async () => {
   }
 };
 
+const fetchVets = async () => {
+  try {
+    const response = await apiClient.get('/doctors/');
+    vets.value = response.data;
+  } catch (error) {
+    console.error("Ошибка загрузки врачей:", error);
+  } finally {
+    loadingVets.value = false;
+  }
+};
+
+const hideImage = (e) => {
+  e.target.style.display = 'none';
+};
+
 onMounted(() => {
   fetchServices();
+  fetchVets();
 });
 </script>
 
@@ -231,16 +279,13 @@ onMounted(() => {
 .hero-visual { flex: 1; position: relative; display: flex; justify-content: center; }
 .image-wrapper { position: relative; width: 100%; max-width: 500px; padding-right: 30px; }
 
-.image-placeholder {
-  width: 100%; height: 450px;
-  background: linear-gradient(135deg, #ffe4ec 0%, #ffcce0 100%);
-  border-radius: 30px; display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 30px 40px rgba(255, 92, 138, 0.2);
+.hero-image {
+  width: 100%; height: auto; max-height: 500px;
+  object-fit: contain; border-radius: 30px;
   position: relative; z-index: 2;
   animation: float 6s ease-in-out infinite;
+  filter: drop-shadow(0 30px 40px rgba(0,0,0,0.15));
 }
-
-.placeholder-emoji { font-size: 150px; }
 
 @keyframes float {
   0%, 100% { transform: translateY(0); }
@@ -293,26 +338,112 @@ onMounted(() => {
 .service-content h3 { font-size: 22px; font-weight: 800; color: #1a1a1a; margin-bottom: 12px; }
 .service-content p { color: #666; font-size: 15px; line-height: 1.6; margin-bottom: 20px; flex-grow: 1; }
 
-/* НОВЫЙ БЛОК ДЛЯ ЦЕНЫ И ССЫЛКИ */
 .service-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-top: 1px solid #eee;
-  padding-top: 15px;
-  margin-top: auto;
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid #eee; padding-top: 15px; margin-top: auto;
 }
 
-.service-price {
-  font-size: 18px;
-  font-weight: 800;
-  color: #1a1a1a;
-}
-
+.service-price { font-size: 18px; font-weight: 800; color: #1a1a1a; }
 .service-link { color: #ff5c8a; font-weight: 700; text-decoration: none; font-size: 15px; transition: color 0.3s ease; }
 .service-link:hover { color: #ff4074; }
-
 .loading-text { text-align: center; color: #666; font-size: 18px; padding: 40px; }
+
+/* --- VETS PREVIEW SECTION --- */
+.vets-preview-section {
+  padding: 80px 20px; max-width: 1200px; margin: 0 auto;
+}
+
+.vets-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 30px;
+  margin-bottom: 40px;
+}
+
+.vet-preview-card {
+  background: white;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+  transition: transform 0.3s ease;
+  border: 1px solid #f0f0f0;
+}
+
+.vet-preview-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(255, 92, 138, 0.15);
+}
+
+.vet-preview-image {
+  height: 250px;
+  background: linear-gradient(135deg, #ffe4ec 0%, #ffcce0 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.vet-preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.vet-preview-info {
+  padding: 24px;
+  text-align: center;
+}
+
+.vet-preview-info h3 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin-bottom: 6px;
+}
+
+.vet-preview-speciality {
+  color: #ff5c8a;
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 15px;
+}
+
+.vet-preview-link {
+  display: inline-block;
+  padding: 10px 24px;
+  background: #fff0f5;
+  color: #ff5c8a;
+  text-decoration: none;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.vet-preview-link:hover {
+  background: #ff5c8a;
+  color: white;
+}
+
+.vets-action {
+  text-align: center;
+}
+
+.btn-outline-dark {
+  background: transparent;
+  border: 2px solid #1a1a1a;
+  color: #1a1a1a;
+  padding: 14px 32px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-dark:hover {
+  background: #1a1a1a;
+  color: white;
+}
 
 /* --- FEATURES SECTION --- */
 .features-section {
@@ -360,12 +491,26 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .hero-container { flex-direction: column; text-align: center; }
+  /* Главный экран */
+  .hero-section { padding: 40px 15px; }
+  .hero-container { flex-direction: column; text-align: center; gap: 30px; }
   .hero-content { max-width: 100%; }
-  .hero-title { font-size: 36px; }
-  .hero-actions { justify-content: center; flex-direction: column; }
-  .trust-indicators { justify-content: center; }
-  .hero-visual { display: none; }
-  .services-grid { grid-template-columns: 1fr; }
+  .hero-title { font-size: 32px; }
+  .hero-subtitle { font-size: 16px; }
+  .hero-actions { justify-content: center; flex-direction: column; width: 100%; }
+  .hero-actions .btn { width: 100%; justify-content: center; }
+  .trust-indicators { flex-direction: column; text-align: center; }
+  
+  /* Прячем картинку на телефоне, чтобы не мешала (или оставляем, если она не широкая) */
+  .hero-visual { display: none; } 
+
+  /* Услуги и Врачи в один столбец */
+  .services-section, .vets-preview-section { padding: 50px 15px; }
+  .services-grid, .vets-preview-grid { grid-template-columns: 1fr; }
+  .section-title { font-size: 28px; }
+  
+  /* Блок преимуществ */
+  .features-section { padding: 40px 15px; }
+  .features-grid { grid-template-columns: 1fr; }
 }
 </style>

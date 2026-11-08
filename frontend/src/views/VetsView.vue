@@ -10,9 +10,16 @@
     </div>
 
     <div v-else class="doctors-grid">
-      <div v-for="vet in vets" :key="vet.id" class="doctor-card">
+      <!-- Добавили index в цикл для чередования картинок -->
+      <div v-for="(vet, index) in vets" :key="vet.id" class="doctor-card">
         <div class="doctor-avatar">
-          <span>{{ vet.first_name[0] }}{{ vet.last_name[0] }}</span>
+          <!-- Картинки doctor1.jpg, doctor2.jpg, doctor3.jpg -->
+          <img 
+            :src="`/doctor${(index % 3) + 1}.jpg`" 
+            alt="Фото врача" 
+            class="vet-photo"
+            @error="handleImageError"
+          />
         </div>
         <div class="doctor-info">
           <h3>{{ vet.first_name }} {{ vet.last_name }}</h3>
@@ -42,6 +49,11 @@ const fetchVets = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+// Если картинка не найдется, мы скроем ее, чтобы не было иконки "битой картинки"
+const handleImageError = (e) => {
+  e.target.style.display = 'none';
 };
 
 onMounted(() => {
@@ -80,15 +92,23 @@ onMounted(() => {
 .doctor-avatar {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, #ff5c8a 0%, #ff8fa3 100%);
   border-radius: 20px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: linear-gradient(135deg, #ff5c8a 0%, #ff8fa3 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 28px;
   font-weight: 800;
-  flex-shrink: 0;
+}
+
+/* Стиль для фото врача */
+.vet-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .doctor-info h3 { font-size: 22px; font-weight: 800; color: #1a1a1a; margin-bottom: 4px; }
