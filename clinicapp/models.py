@@ -27,20 +27,6 @@ class Pet(models.Model):
     def __str__(self):
         return f"{self.name} ({self.species})"
 
-class Doctor(models.Model):
-    first_name = models.CharField(max_length=100, verbose_name="Имя")
-    last_name = models.CharField(max_length=100, verbose_name="Фамилия")
-    speciality = models.CharField(max_length=100, verbose_name="Специальность")
-    phone = models.CharField(max_length=20, verbose_name="Телефон")
-    description = models.TextField(blank=True, verbose_name="Описание")  
-
-    class Meta:
-        verbose_name = "Врач"
-        verbose_name_plural = "Врачи"
-
-    def __str__(self):
-        return f"Доктор {self.first_name} {self.last_name}"
-
 class Service(models.Model):
     title = models.CharField(max_length=150, verbose_name="Название услуги")
     price = models.DecimalField(max_digits=8, decimal_places=2, verbose_name="Цена (руб.)")
@@ -53,6 +39,23 @@ class Service(models.Model):
     def __str__(self):
         return self.title
 
+class Doctor(models.Model):
+    first_name = models.CharField(max_length=100, verbose_name="Имя")
+    last_name = models.CharField(max_length=100, verbose_name="Фамилия")
+    speciality = models.CharField(max_length=100, verbose_name="Специальность")
+    phone = models.CharField(max_length=20, verbose_name="Телефон")
+    description = models.TextField(blank=True, verbose_name="Описание")  
+    
+    # Связь врача с услугами, которые он оказывает
+    services = models.ManyToManyField(Service, blank=True, related_name="doctors", verbose_name="Оказываемые услуги")
+
+    class Meta:
+        verbose_name = "Врач"
+        verbose_name_plural = "Врачи"
+
+    def __str__(self):
+        return f"Доктор {self.first_name} {self.last_name}"
+
 class Appointment(models.Model):
     STATUS_CHOICES = (
         ('new', 'Новая'),
@@ -63,7 +66,7 @@ class Appointment(models.Model):
     
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name="appointments", verbose_name="Питомец")
     doctor = models.ForeignKey(Doctor, on_delete=models.SET_NULL, null=True, related_name="appointments", verbose_name="Врач")
-    service = models.ForeignKey(Service, on_delete=models.SET_NULL, null=True, verbose_name="Услуга")
+    services = models.ManyToManyField(Service, verbose_name="Услуги", blank=True)
     date_time = models.DateTimeField(verbose_name="Дата и время приёма")
     description = models.TextField(blank=True, null=True, verbose_name="Описание проблемы")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new', verbose_name="Статус")

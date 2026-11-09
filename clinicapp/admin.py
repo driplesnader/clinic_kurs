@@ -9,14 +9,16 @@ class OwnerAdmin(admin.ModelAdmin):
 class PetAdmin(admin.ModelAdmin):
     list_display = ("name", "species", "owner")
 
-@admin.register(Doctor)
-class DoctorAdmin(admin.ModelAdmin):
-    list_display = ("first_name", "last_name", "speciality")
-
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
     list_display = ("title", "price")
 
+@admin.register(Doctor)
+class DoctorAdmin(admin.ModelAdmin):
+    list_display = ("first_name", "last_name", "speciality")
+    filter_horizontal = ('services',) # Удобный выбор услуг для врача
+
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
     list_display = ("pet", "doctor", "date_time", "status")
+    filter_horizontal = ('services',) # Удобный просмотр услуг в записи
